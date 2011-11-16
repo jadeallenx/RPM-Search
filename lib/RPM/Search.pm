@@ -1,111 +1,129 @@
 package RPM::Search;
 
-use 5.006;
 use strict;
 use warnings;
 
-=head1 NAME
-
-RPM::Search - The great new RPM::Search!
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
+use File::Find;
+use DBI;
+use Try::Tiny;
 
 our $VERSION = '0.01';
 
+try {
+    require DBD::SQLite;
+}
+catch {
+    die "This module requires DBD::SQLite. Try
+        yum -y install perl-DBD-SQLite";
+};
 
-=head1 SYNOPSIS
+sub new {
+    my $class = shift;
+    my $proto = ref $class || $class;
+    
+    my $self = bless { @_ }, $proto;
 
-Quick summary of what the module does.
+    $self->find_yum_db unless $self->yum_primary_db; 
+    $self->open_db unless $self->dbh;
 
-Perhaps a little code snippet.
-
-    use RPM::Search;
-
-    my $foo = RPM::Search->new();
-    ...
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
-=head2 function1
-
-=cut
-
-sub function1 {
+    return $self;
 }
 
-=head2 function2
+sub cache_base {
+    my $self = shift;
+    my $param = shift;
 
-=cut
+    if ( $param ) {
+        $self->{'cache_base'} = $param;
+    }
 
-sub function2 {
+    return $self->{'cache_base'};
 }
 
-=head1 AUTHOR
+sub yum_primary_db {
+    my $self = shift;
+    my $param = shift;
 
-Mark Allen, C<< <mrallen1 at yahoo.com> >>
+    if ( $param ) {
+        return unless -e $param;
+        $self->{'yum_primary_db'} = $param;
+    }
 
-=head1 BUGS
+    return $self->{'yum_primary_db'};
+}
 
-Please report any bugs or feature requests to C<bug-rpm-search at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=RPM-Search>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+sub find_yum_db {
+    my $self = shift;
 
-
-
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc RPM::Search
+    my $base = $self->cache_base() || "/var/cache/yum";
 
 
-You can also look for information at:
+    my $path;
+    find( sub {
+            $path = $File::Find::name if /primary\.sqlite\z/ &&
+                $File::Find::dir !~ /update/ 
+          }, 
+    $base);
 
-=over 4
+    if ( $path ) {
+        $self->yum_primary_db($path);
+        return 1;
+    }
+    else {
+        warn "Couldn't find any yum primary SQLite databases in $base";
+        return 0;
+    }
+}
 
-=item * RT: CPAN's request tracker (report bugs here)
+sub dbh {
+    my $self = shift;
+    my $param = shift;
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=RPM-Search>
+    if ( $param ) {
+        return unless ref($param) =~ /DBI/i;
+        $self->{'dbh'} = $param;
+    }
 
-=item * AnnoCPAN: Annotated CPAN documentation
+    return $self->{'dbh'};
+}
 
-L<http://annocpan.org/dist/RPM-Search>
+sub open_db {
+    my $self = shift;
 
-=item * CPAN Ratings
+    my $dsn = sprintf('dbi:SQLite:dbname=%s', $self->yum_primary_db);
 
-L<http://cpanratings.perl.org/d/RPM-Search>
+    try {
+        my $dbh = DBI->connect($dsn, undef, undef, {
+                        RaiseError => 1,
+                    sqlite_unicode => 1, 
+                } ) or die $DBI::err;
+        $self->dbh($dbh);
+    }
+    catch {
+        die "Couldn't open db " . $self->yum_primary_db . ": $_";
+    };
+}
 
-=item * Search CPAN
+sub search {
+    my $self = shift;
+    my $pattern = shift;
 
-L<http://search.cpan.org/dist/RPM-Search/>
+    my $sql = "SELECT name FROM packages WHERE name ";
 
-=back
+    if ( ref($pattern) =~ /regexp/i ) {
+        $sql .= "REGEXP ?";
+    }
+    elsif ( $pattern =~ /[%_]/ ) {
+        $sql .= "LIKE ?";
+    }
+    elsif ( $pattern =~ /[\?\*]/ ) {
+        $sql .= "GLOB ?";
+    }
+    else {
+        $sql .= "=?";
+    }
 
+    return $self->dbh->selectcol_arrayref($sql, undef, $pattern);
+}
 
-=head1 ACKNOWLEDGEMENTS
-
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright 2011 Mark Allen.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
-
-=cut
-
-1; # End of RPM::Search
+1;
