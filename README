@@ -1,16 +1,18 @@
 RPM-Search
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+Version: 0.01
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+PURPOSE
 
+This module allows one to search the entire collection of RPMs
+available for a given installed Linux distribution that uses RPMs, not
+just listing the RPMs already installed on a system.
+
+And frankly, have you tried using "yum search"?
+
+Eventually, I plan to use this functionality to make a plugin for
+"cpanminus" to suggest vendor‐supplied packages instead of building
+them "from scratch."
 
 INSTALLATION
 
@@ -39,8 +41,8 @@ You can also look for information at:
     CPAN Ratings
         http://cpanratings.perl.org/d/RPM-Search
 
-    Search CPAN
-        http://search.cpan.org/dist/RPM-Search/
+    MetaCPAN
+        https://metacpan.org/module/RPM::Search/
 
 
 LICENSE AND COPYRIGHT
@@ -52,4 +54,3 @@ under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
-

@@ -18,14 +18,14 @@ RPM::Search
   # On (recent) RPM based systems
   my $db = RPM::Search->new();
 
-  my $aref = $db->search(qr/perl-Mo.se/);
+  my @names = $db->search(qr/perl-Mo.se/);
   # or
-  $aref = $db->search('perl-CGI-*');
+  @names = $db->search('perl-CGI-*');
   # or
-  $aref = $db->search('cpanminus');
+  @names = $db->search('cpanminus');
 
-  if ( $aref ) {
-    my $pkgs = join ", ", @{ $aref };
+  if ( @names ) {
+    my $pkgs = join ", ", @names;
     `/usr/bin/yum -y install $pkgs`;
   }
   else {
@@ -257,7 +257,7 @@ the database to return any results
 
 =back
 
-The method returns an arrayref of all matching package names
+The method returns an array of all matching package names
 (which may be zero results.)  Undef is returned on errors.
 
 =back
@@ -290,7 +290,7 @@ sub search {
     }
 
     try {
-        return $self->dbh->selectcol_arrayref($sql, undef, @bind_params) or die $DBI::err;
+        return @{ $self->dbh->selectcol_arrayref($sql, undef, @bind_params) } or die $DBI::err;
     }
     catch {
         warn "Couldn't execute query $sql: $_\n";
@@ -334,7 +334,7 @@ L<http://cpanratings.perl.org/d/RPM-Search>
 
 =item * MetaCPAN
 
-L<https://metacpan.org/dist/RPM-Search/>
+L<https://metacpan.org/module/RPM::Search/>
 
 =item * Github
 
