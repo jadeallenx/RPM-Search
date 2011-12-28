@@ -14,7 +14,7 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
         'Test::More' => 0,
-        'DBD::SQLite' => 0,
+        'DBD::SQLite' => '1.34',
         'Try::Tiny' => 0,
         'DBI' => 0,
         'File::Find' => 0,

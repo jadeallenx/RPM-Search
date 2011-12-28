@@ -1,6 +1,13 @@
 #!perl -T
 
-use Test::More tests => 9;
+use Test::More;
+
+if ( $^O eq "Win32" ) {
+    plan skip_all => "This library is not supported on Win32";
+}
+else {
+    plan tests => 9;
+}
 
 use RPM::Search;
 

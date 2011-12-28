@@ -1,5 +1,11 @@
 Revision history for RPM-Search
 
+0.02    2011-12-27
+        CPAN test failures fixed by minimum version of DBD::SQLite
+        at 1.34 (for automatic REGEXP implementation)
+
+        Skip tests on Windows (this library is useless there anyway.)
+
 0.01    Date/time
         First version, released on an unsuspecting world.
 
